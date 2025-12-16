@@ -17,7 +17,7 @@ let peerConnection;
 let signaling;
 try {
   signaling = new WebSocket('wss://ws.tc-net.bzy.li');
-  alert('websocket created');
+  console.log('WebSocket OK');
 } catch (e) {
   alert('exception: ' + e.message);
 }
