@@ -16,13 +16,14 @@ let peerConnection;
 
 let signaling;
 try {
-  signaling = new WebSocket('wss://10.56.95.20:3000');
+  signaling = new WebSocket('wss://ws.tc-net.bzy.li');
   alert('websocket created');
 } catch (e) {
   alert('exception: ' + e.message);
 }
 signaling.onopen = e => {
   signaling.send(JSON.stringify({type : 'ready'}));
+  console.log('sent ready message');
 }
 
 signaling.onmessage = e => {
@@ -65,7 +66,7 @@ async function hangup() {
 };
 
 function createPeerConnection() {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:10.56.95.20:3478', username : 'test', credential :'test'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:tc-net.bzy.li:3478', username : 'test', credential :'test'}]});
     peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState);
     peerConnection.onicecandidate = e => {
         const message = {
