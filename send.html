@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <button id='startButton'>Start</button>
+    <button id='hangupButton'>Hang</button>
+    <div style='background-color: red;padding: 12px; width: 300px; height:400px;'>
+        LOCAL VIDEO
+        <video id='localVideo' autoplay playsinline controls></video>
+    </div>
+</body>
+<script>
+
+const startButton = document.getElementById('startButton');
+const hangupButton = document.getElementById('hangupButton');
+hangupButton.disabled = true;
+
+const localVideo = document.getElementById('localVideo');
+
+let peerConnection;
+let localStream;
+
+
+const signaling = new WebSocket('wss://localhost:3000');
+signaling.onmessage = e => {
+    if (!localStream) {
+        console.log('Not ready yet');
+        return;
+    }
+    const message = JSON.parse(e.data);
+    switch (message.type) {
+        case 'offer':
+      handleOffer(message);
+      break;
+    case 'answer':
+      handleAnswer(message);
+      break;
+    case 'candidate':
+      handleCandidate(message);
+      break;
+    case 'ready':
+      // A second tab joined. This tab will initiate a call unless in a call already.
+      if (peerConnection) {
+        console.log('already in call, ignoring');
+        return;
+      }
+      console.log('Remote device ready');
+      break;
+    case 'bye':
+      if (pc) {
+        hangup();
+      }
+      break;
+    default:
+      console.log('unhandled', e);
+      break;
+  }
+};
+
+startButton.onclick = async () => {
+    localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: true});
+    localVideo.srcObject = localStream;
+
+    startButton.disabled = true;
+    hangupButton.disabled = false;
+
+    signaling.send(JSON.stringify({type : 'ready', roomID : 'sender'}));
+    makeCall();
+};
+
+hangupButton.onclick = async () => {
+    hangup()
+    signaling.send(JSON.stringify({type : 'bye'}));
+};
+
+async function hangup() {
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+    startButton.disabled = false;
+    hangupButton.disabled = true;
+};
+
+function createPeerConnection() {
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:localhost:3478', username : 'test', credential :'test'}]});
+    peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState);
+    peerConnection.onicecandidate = e => {
+        const message = {
+            type : 'candidate',
+            candidate : null,
+        };
+        if (e.candidate) {
+            message.candidate = e.candidate.candidate;
+            message.sdpMid = e.candidate.sdpMid;
+            message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+        }
+        console.log(message);
+        signaling.send(JSON.stringify(message));
+    };
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+};
+
+async function makeCall() {
+  await createPeerConnection();
+
+  const offer = await peerConnection.createOffer();
+  signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp}));
+  await peerConnection.setLocalDescription(offer);
+}
+
+async function handleOffer(offer) {
+  if (peerConnection) {
+    console.error('existing peerconnection');
+    return;
+  }
+  await createPeerConnection();
+  await peerConnection.setRemoteDescription(offer);
+
+  const answer = await peerConnection.createAnswer();
+  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp}));
+  await peerConnection.setLocalDescription(answer);
+}
+
+async function handleAnswer(answer) {
+  if (!peerConnection) {
+    console.error('no peerconnection');
+    return;
+  }
+  await peerConnection.setRemoteDescription(answer);
+}
+
+async function handleCandidate(candidate) {
+  if (!peerConnection) {
+    console.error('no peerconnection');
+    return;
+  }
+  if (candidate.candidate) {
+    console.log('adding new candidate');
+    const iceCandidate = new RTCIceCandidate({
+        candidate: candidate.candidate,
+        sdpMid: candidate.sdpMid,
+        sdpMLineIndex: candidate.sdpMLineIndex
+    });
+    await peerConnection.addIceCandidate(iceCandidate);
+  }
+}
+</script>
+</html>

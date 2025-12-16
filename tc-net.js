@@ -1,30 +1,3 @@
-// SIGNALING SERVER
-const WebSocket = require('ws');
-
-const wsServer = new WebSocket.Server({port : 3000});
-
-const wsClients = new Set();
-
-wsServer.on('connection', ws => {
-  wsClients.add(ws);
-
-  ws.on('message', message => {
-    for (const client of wsClients) {
-      if (client !== ws && client.readyState === WebSocket.OPEN ) {
-        client.send(message.toString());
-      }
-    }
-    console.log(`[SIGNALING] ${message.toString()}`);
-  });
-
-  ws.on('close', () => {
-    wsClients.delete(ws);
-  });
-
-});
-console.log("[SIGNALING] WebSocket Server is running on port 3000")
-
-
 // STUN/TURN SERVER
 const Turn = require('node-turn');
 const turnServer = new Turn({
@@ -42,8 +15,8 @@ console.log("[TURN/STUN] Server is running on port 3478")
 
 // HTTPS SERVER
 const fs = require('fs');
-const https = require('https');
 const path = require('path');
+const https = require('https');
 
 const port = 8443; // HTTPS default port (can use 8080 if preferred)
 const certDir = path.join(__dirname, 'certs');
@@ -173,10 +146,14 @@ server.on('request', (request, response) => {
     }
     
     const urlToPath = {
-        '/new.html' : 'new.html'
+        '/new.html' : 'new.html',
+        '/send.html' : 'send.html',
+        '/receive.html' : 'receive.html'
     };
     const urlToContentType = {
-        '/new.html' : 'text/html'
+        '/new.html' : 'text/html',
+        '/send.html' : 'text/html',
+        '/receive.html' : 'text/html'
     };
     const filename = urlToPath[pathname];
     if (!filename) {
@@ -205,3 +182,38 @@ server.on('request', (request, response) => {
         response.end(data);
     });
 });
+
+// SIGNALING SERVER
+const WebSocket = require('ws');
+
+const wssServer = https.createServer({ 
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath)
+});
+
+const wsServer = new WebSocket.Server({server : wssServer});
+wssServer.listen(3000);
+
+const wsClients = new Set();
+
+wsServer.on('connection', ws => {
+  wsClients.add(ws);
+
+  ws.on('message', message => {
+    for (const client of wsClients) {
+      if (client !== ws && client.readyState === WebSocket.OPEN ) {
+        client.send(message.toString());
+      }
+    }
+    console.log(`[SIGNALING] ${message.toString()}`);
+  });
+
+  ws.on('close', () => {
+    wsClients.delete(ws);
+  });
+
+});
+console.log("[SIGNALING] WebSocket Server is running on port 3000")
+
+
+
