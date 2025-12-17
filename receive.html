@@ -108,6 +108,19 @@ function createPeerConnection() {
       title.style.display= 'none';
       remoteVideo.style.display = 'inline';
       remoteVideo.srcObject = e.streams[0];
+      const stream = remoteVideo.srcObject;
+
+      stream.getTracks().forEach(track => {
+        track.addEventListener("ended", () => {
+          console.log("A track ended");
+
+          if (!stream.getTracks().some(t => t.readyState === "live")) {
+            console.log("All tracks ended — stream is dead");
+          // do something
+          alert('stream done');
+          }
+        });
+      });
     }
 
 };
