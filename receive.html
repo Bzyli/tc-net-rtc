@@ -155,5 +155,19 @@ async function handleCandidate(candidate) {
   }
 }
 
+let lastFrames = 0;
+
+setInterval(async () => {
+  const stats = await pc.getStats();
+  stats.forEach(report => {
+    if (report.type === "inbound-rtp" && report.kind === "video") {
+      if (report.framesDecoded === lastFrames) {
+        alert("Video frozen — likely dead stream");
+      }
+      lastFrames = report.framesDecoded;
+    }
+  });
+}, 2000);
+
 </script>
 </html>
