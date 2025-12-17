@@ -94,7 +94,7 @@ function createPeerConnection() {
       const state = peerConnection.iceConnectionState;
       console.log('ICE state:', state);
       if (state === "failed" || state === "disconnected" || state === "closed") {
-        alert("WebRTC connection is dead");
+        reload();
         // do something (reconnect, cleanup UI, etc.)
       }
     }
