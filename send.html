@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Sending page</title>
 </head>
 <body>
     <button id='startButton'>Start</button>
@@ -89,7 +89,7 @@ async function hangup() {
 };
 
 function createPeerConnection() {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:tc-net.bzy.li:3478', username : 'test', credential :'test'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:turn.tc-net.bzy.li', username : 'test', credential :'test'}]});
     peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState);
     peerConnection.onicecandidate = e => {
         const message = {
