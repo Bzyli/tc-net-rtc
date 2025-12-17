@@ -107,6 +107,7 @@ function createPeerConnection() {
             message.candidate = e.candidate.candidate;
             message.sdpMid = e.candidate.sdpMid;
             message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+            message.roomId = roomID;
         }
         console.log(message);
         signaling.send(JSON.stringify(message));
@@ -127,7 +128,7 @@ async function handleOffer(offer) {
   await peerConnection.setRemoteDescription(offer);
 
   const answer = await peerConnection.createAnswer();
-  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp}));
+  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp, roomID : roomID}));
   await peerConnection.setLocalDescription(answer);
 }
 
@@ -154,20 +155,6 @@ async function handleCandidate(candidate) {
     await peerConnection.addIceCandidate(iceCandidate);
   }
 }
-
-let lastFrames = 0;
-
-setInterval(async () => {
-  const stats = await pc.getStats();
-  stats.forEach(report => {
-    if (report.type === "inbound-rtp" && report.kind === "video") {
-      if (report.framesDecoded === lastFrames) {
-        alert("Video frozen — likely dead stream");
-      }
-      lastFrames = report.framesDecoded;
-    }
-  });
-}, 2000);
 
 </script>
 </html>

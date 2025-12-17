@@ -59,6 +59,9 @@ const localVideo = document.getElementById('localVideo');
 let peerConnection;
 let localStream;
 
+const params = new URLSearchParams(window.location.search);
+const roomID = params.get('roomID');
+
 
 const signaling = new WebSocket('wss://ws.tc-net.bzy.li');
 signaling.onmessage = e => {
@@ -103,13 +106,13 @@ startButton.onclick = async () => {
     startButton.disabled = true;
     hangupButton.disabled = false;
 
-    signaling.send(JSON.stringify({type : 'ready', roomID : 'sender'}));
+    signaling.send(JSON.stringify({type : 'ready', roomID : roomID}));
     makeCall();
 };
 
 hangupButton.onclick = async () => {
     hangup()
-    signaling.send(JSON.stringify({type : 'bye'}));
+    signaling.send(JSON.stringify({type : 'bye', roomID : roomID}));
 };
 
 async function hangup() {
@@ -135,6 +138,7 @@ function createPeerConnection() {
             message.candidate = e.candidate.candidate;
             message.sdpMid = e.candidate.sdpMid;
             message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+            message.roomID = roomID;
         }
         console.log(message);
         signaling.send(JSON.stringify(message));
@@ -147,7 +151,7 @@ async function makeCall() {
   await createPeerConnection();
 
   const offer = await peerConnection.createOffer();
-  signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp}));
+  signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID}));
   await peerConnection.setLocalDescription(offer);
 }
 
@@ -160,7 +164,7 @@ async function handleOffer(offer) {
   await peerConnection.setRemoteDescription(offer);
 
   const answer = await peerConnection.createAnswer();
-  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp}));
+  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp, roomID : roomID}));
   await peerConnection.setLocalDescription(answer);
 }
 
