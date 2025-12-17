@@ -90,7 +90,14 @@ async function hangup() {
 
 function createPeerConnection() {
     peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:turn.tc-net.bzy.li', username : 'test', credential :'test'}]});
-    peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState);
+    peerConnection.oniceconnectionstatechange = () => {
+      const state = peerConnection.iceConnectionState;
+      console.log('ICE state:', state);
+      if (state === "failed" || state === "disconnected" || state === "closed") {
+        alert("WebRTC connection is dead");
+        // do something (reconnect, cleanup UI, etc.)
+      }
+    }
     peerConnection.onicecandidate = e => {
         const message = {
             type : 'candidate',
@@ -108,21 +115,7 @@ function createPeerConnection() {
       title.style.display= 'none';
       remoteVideo.style.display = 'inline';
       remoteVideo.srcObject = e.streams[0];
-      const stream = remoteVideo.srcObject;
-
-      stream.getTracks().forEach(track => {
-        track.addEventListener("ended", () => {
-          console.log("A track ended");
-
-          if (!stream.getTracks().some(t => t.readyState === "live")) {
-            console.log("All tracks ended — stream is dead");
-          // do something
-          alert('stream done');
-          }
-        });
-      });
     }
-
 };
 
 async function handleOffer(offer) {
