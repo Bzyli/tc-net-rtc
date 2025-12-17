@@ -24,19 +24,25 @@ wsServer.on('connection', ws => {
   wsClients.add(ws);
 
   ws.on('message', message => {
+    let data;
+
     try {
-      const data = JSON.parse(message);
-      console.log(message.roomID)
+      data = JSON.parse(message);
     } catch (e) {
       console.log('[SIGNALING] JSON error' + e);
+      return;
+    }
+
+    if (data.roomID) {
+      ws.roomID = data.roomID;
+      console.log(`[SIGNALING][ROOM : ${data.roomID}] ${message.toString()}`);
     }
 
     for (const client of wsClients) {
-      if (client !== ws && client.readyState === WebSocket.OPEN ) {
+      if (client !== ws && client.readyState === WebSocket.OPEN && ws.roomID === client.roomID) {
         client.send(message.toString());
       }
     }
-    console.log(`[SIGNALING] ${message.toString()}`);
   });
 
   ws.on('close', () => {
