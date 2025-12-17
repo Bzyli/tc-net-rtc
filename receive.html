@@ -32,7 +32,10 @@ const title = document.getElementById('title');
 let url = window.location.protocol + '//' + window.location.host;
 let peerConnection;
 
-title.innerText += " " + url + " to start streaming !";
+const params = new URLSearchParams(window.location.search);
+const roomID = params.get('roomID');
+
+title.innerText += " " + url + "/send.html?roomID=" + roomID + " to start streaming !";
 
 let signaling;
 try {
@@ -41,8 +44,6 @@ try {
   alert('exception: ' + e.message);
 }
 
-const params = new URLSearchParams(window.location.search);
-const roomID = params.get('roomID');
 
 
 signaling.onopen = e => {

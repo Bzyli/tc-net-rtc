@@ -24,6 +24,13 @@ wsServer.on('connection', ws => {
   wsClients.add(ws);
 
   ws.on('message', message => {
+    try {
+      const data = JSON.parse(message);
+      console.log(message.roomID)
+    } catch (e) {
+      console.log('[SIGNALING] JSON error' + e);
+    }
+
     for (const client of wsClients) {
       if (client !== ws && client.readyState === WebSocket.OPEN ) {
         client.send(message.toString());
@@ -38,6 +45,3 @@ wsServer.on('connection', ws => {
 
 });
 console.log("[SIGNALING] WebSocket Server is running on port 3000")
-
-
-
