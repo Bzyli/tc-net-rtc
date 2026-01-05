@@ -61,58 +61,55 @@ let localStream;
 
 const params = new URLSearchParams(window.location.search);
 const roomID = params.get('roomID');
+// Simplement pour afficher l'URL sur laquelle on doit diffuser
 
-
-const signaling = new WebSocket('wss://ws.tc-net.bzy.li');
+const signaling = new WebSocket('wss://ws.tc-net.bzy.li'); // Serveur de signalement
 signaling.onmessage = e => {
     if (!localStream) {
-        console.log('Not ready yet');
+        console.log('Not ready yet'); // On a pas encore pu obtenir le flux vidéo de l'utilisateur qui veut diffuser 
         return;
     }
-    const message = JSON.parse(e.data);
+    const message = JSON.parse(e.data);  // Le type de message qui a été reçu
     switch (message.type) {
-        case 'offer':
-      handleOffer(message);
-      break;
-    case 'answer':
+    case 'answer':                       // Le vidéoprojecteur/raspberry pi a répondu à l'offre de diffusion
       handleAnswer(message);
       break;
-    case 'candidate':
+    case 'candidate':                    // Candidat ICE reçu
       handleCandidate(message);
       break;
-    case 'ready':
-      // A second tab joined. This tab will initiate a call unless in a call already.
+    case 'ready':                        // Le raspbery pi/device est prêt à recevoir un flux
       if (peerConnection) {
-        console.log('already in call, ignoring');
+        console.log('already in call, ignoring'); // on était déjà dans un appel donc on peut ignorer
         return;
       }
       console.log('Remote device ready');
       break;
-    case 'bye':
+    case 'bye':                         // Fin de l'appel WebRTC
       if (pc) {
         hangup();
       }
       break;
     default:
-      console.log('unhandled', e);
+      console.log('unhandled', e);      // Message inconnu
       break;
   }
 };
 
+// Fonction pour récupérer le flux vidéo de l'utilisteur
 startButton.onclick = async () => {
-    localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: true});
-    localVideo.srcObject = localStream;
+    localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: true}); // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
+    localVideo.srcObject = localStream; // Affichage de la fenêtre capturé sur la page web
 
     startButton.disabled = true;
     hangupButton.disabled = false;
 
-    signaling.send(JSON.stringify({type : 'ready', roomID : roomID}));
+    signaling.send(JSON.stringify({type : 'ready', roomID : roomID})); // On prévient le signaling server qu'on est prêt
     makeCall();
 };
 
 hangupButton.onclick = async () => {
     hangup()
-    signaling.send(JSON.stringify({type : 'bye', roomID : roomID}));
+    signaling.send(JSON.stringify({type : 'bye', roomID : roomID})); // On prévient le signaling server qu'on raccroche
 };
 
 async function hangup() {
@@ -128,11 +125,12 @@ async function hangup() {
 
 function createPeerConnection() {
     peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:turn.tc-net.bzy.li', username : 'test', credential :'test'}]});
-    peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState);
-    peerConnection.onicecandidate = e => {
+    // API de WebRTC, on instancie l'object RTCPeerConnection avec éventuellement des serveurs stun et turn (pas forcément nécessaire sur Eduroam ?)
+    peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState); // On affiche l'état de la découverte des pairs dans la console
+    peerConnection.onicecandidate = e => { // On découvre un candidat ICE
         const message = {
             type : 'candidate',
-            candidate : null,
+            candidate : null, // Le candidat null correspond à la fin de la découverte des pairs en WebRTC
         };
         if (e.candidate) {
             message.candidate = e.candidate.candidate;
@@ -141,31 +139,17 @@ function createPeerConnection() {
             message.roomID = roomID;
         }
         console.log(message);
-        signaling.send(JSON.stringify(message));
+        signaling.send(JSON.stringify(message)); // On partage ce candidat au Websocket (donc aux autres pairs)
     };
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); // On partage le flux vidéo en local vers la connection WebRTC
 };
 
 async function makeCall() {
   await createPeerConnection();
 
   const offer = await peerConnection.createOffer();
-  signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID}));
-  await peerConnection.setLocalDescription(offer);
-}
-
-async function handleOffer(offer) {
-  if (peerConnection) {
-    console.error('existing peerconnection');
-    return;
-  }
-  await createPeerConnection();
-  await peerConnection.setRemoteDescription(offer);
-
-  const answer = await peerConnection.createAnswer();
-  signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp, roomID : roomID}));
-  await peerConnection.setLocalDescription(answer);
+  signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
+  await peerConnection.setLocalDescription(offer);                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
 }
 
 async function handleAnswer(answer) {
@@ -173,7 +157,7 @@ async function handleAnswer(answer) {
     console.error('no peerconnection');
     return;
   }
-  await peerConnection.setRemoteDescription(answer);
+  await peerConnection.setRemoteDescription(answer); // Ce qui va nous être envoyé
 }
 
 async function handleCandidate(candidate) {
@@ -181,14 +165,14 @@ async function handleCandidate(candidate) {
     console.error('no peerconnection');
     return;
   }
-  if (candidate.candidate) {
+  if (candidate.candidate) { // Si il y a effectivement un candidat dans ce qui nous a été envoyé (en gros pas null, donc pas la fin de la découverte)
     console.log('adding new candidate');
     const iceCandidate = new RTCIceCandidate({
         candidate: candidate.candidate,
         sdpMid: candidate.sdpMid,
         sdpMLineIndex: candidate.sdpMLineIndex
     });
-    await peerConnection.addIceCandidate(iceCandidate);
+    await peerConnection.addIceCandidate(iceCandidate); // On ajoute le candidat qui nous a été envoyé par un pair à notre liste de candidats.
   }
 }
 </script>
