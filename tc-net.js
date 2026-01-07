@@ -1,5 +1,6 @@
 // STUN/TURN SERVER
 const Turn = require('node-turn');
+
 const turnServer = new Turn({
   authMech: 'long-term',
   credentials: {
@@ -51,3 +52,30 @@ wsServer.on('connection', ws => {
 
 });
 console.log("[SIGNALING] WebSocket Server is running on port 3000")
+
+// API SERVER
+const http = require('http');
+
+const API_PORT = 3001;
+
+const server = http.createServer((req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const pathname = url.pathname;
+
+  if (req.method === 'GET' && pathname === '/api/rooms') {
+    const response = Array.from(wsClients).map(e => e.roomID);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(response));
+    return;
+  }
+
+  // Not found
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Not Found' }));
+});
+
+server.listen(API_PORT, () => {
+  console.log(`[API] Running on port ${API_PORT}`);
+});
+
