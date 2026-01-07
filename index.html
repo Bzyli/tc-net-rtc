@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Système de diffusion</title>
 </head>
 <style>
     body {
@@ -44,15 +44,19 @@
 
 
 </style>
-<body>
+<body onload="getRooms()">
     <h1>Diffusion tc-net : salles disponibles pour la diffusion</h1>
     <div id='salles'>
-            <h4><a href='https://startpage.com'>Salle de réunion</a></h4>
-            <h4>Salle TD-D</h4>
     </div> 
 </body>
 <script>
-    async function getRooms() {
+const sallesContainer = document.getElementById('salles');
+
+function generateRoomCard(name) {
+    return `<h4><a href='https://tc-net.bzy.li/send.html?roomID=${name}'> ${name}</a></h4>`;
+}
+
+async function getRooms() {
   const url = "https://api.tc-net.bzy.li/api/rooms";
   try {
     const response = await fetch(url);
@@ -61,7 +65,12 @@
     }
 
     const result = await response.json();
-    console.log(result);
+    let newRooms = new Set(result);
+    console.log(newRooms);
+    sallesContainer.innerHTML = '';
+    newRooms.forEach(element => {
+        sallesContainer.innerHTML += generateRoomCard(element);
+    });
   } catch (error) {
     console.error(error.message);
   }
