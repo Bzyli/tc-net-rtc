@@ -8,6 +8,8 @@ const turnServer = new Turn({
   },
   listeningPort : 3478,
   maxAllocateLifetime : 7200,
+  minPort: 49152,
+  maxPort: 49250,
   debugLevel : 'INFO'
 })
 
