@@ -72,10 +72,8 @@ signaling.onmessage = e => {
       console.log('initiating connection');
       break;
     case 'bye':
+      console.log('reloading');
       location.reload();
-      if (pc) {
-        hangup();
-      }
       break;
     default:
       console.log('unhandled', e);

@@ -115,6 +115,7 @@ hangupButton.onclick = async () => {
 window.onbeforeunload = async () => {
     hangup()
     signaling.send(JSON.stringify({type : 'bye', roomID : roomID})); // On prévient le signaling server qu'on raccroche
+    return null;
 }
 
 async function hangup() {
