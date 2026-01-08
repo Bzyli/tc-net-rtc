@@ -75,6 +75,7 @@ signaling.onmessage = e => {
       if (pc) {
         hangup();
       }
+      location.reload();
       break;
     default:
       console.log('unhandled', e);
@@ -95,8 +96,7 @@ function createPeerConnection() {
       const state = peerConnection.iceConnectionState;
       console.log('ICE state:', state);
       if (state === "failed" || state === "disconnected" || state === "closed") {
-        reload();
-        // do something (reconnect, cleanup UI, etc.)
+        location.reload();
       }
     }
     peerConnection.onicecandidate = e => {

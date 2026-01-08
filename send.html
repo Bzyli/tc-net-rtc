@@ -112,6 +112,11 @@ hangupButton.onclick = async () => {
     signaling.send(JSON.stringify({type : 'bye', roomID : roomID})); // On prévient le signaling server qu'on raccroche
 };
 
+window.onbeforeunload = async () => {
+    hangup()
+    signaling.send(JSON.stringify({type : 'bye', roomID : roomID})); // On prévient le signaling server qu'on raccroche
+}
+
 async function hangup() {
     if (peerConnection) {
         peerConnection.close();
