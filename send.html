@@ -113,7 +113,7 @@ hangupButton.onclick = async () => {
 };
 
 window.onbeforeunload = async () => {
-    hangup()
+    event.preventDefault();
     signaling.send(JSON.stringify({type : 'bye', roomID : roomID})); // On prévient le signaling server qu'on raccroche
     return null;
 }
@@ -137,12 +137,12 @@ function createPeerConnection() {
         const message = {
             type : 'candidate',
             candidate : null, // Le candidat null correspond à la fin de la découverte des pairs en WebRTC
-        };
+            roomID : roomID,
+          };
         if (e.candidate) {
             message.candidate = e.candidate.candidate;
             message.sdpMid = e.candidate.sdpMid;
             message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-            message.roomID = roomID;
         }
         console.log(message);
         signaling.send(JSON.stringify(message)); // On partage ce candidat au Websocket (donc aux autres pairs)

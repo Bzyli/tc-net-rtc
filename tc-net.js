@@ -78,7 +78,7 @@ const server = http.createServer((req, res) => {
 
 
   if (req.method === 'GET' && pathname === '/api/rooms') {
-    const response = Array.from(wsClients).map(e => e.roomID);
+    const response = Array.from(wsClients).map(e => e.roomID).filter(roomID => roomID != null);
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(response));
