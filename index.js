@@ -89,7 +89,6 @@ function createPeerConnection(roomID) {
     };
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); // On partage le flux vidéo en local vers la connection WebRTC
 };
-
 //--------------  END OF WEBRTC LOGIC ------------------
 
 //--------------  START CALL ---------------
@@ -99,7 +98,7 @@ sallesContainer.onclick = async (e) => {
   if (e.target.className !== 'rooms') {return;}
   let roomID = e.target.id;
   globalRoomID = roomID;
-  localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: true}); // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
+  localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: {frameRate : {ideal : 30}, width : { max : 1920, ideal : 1280}, height : {max : 1080, ideal : 720}}}); // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia
   localVideo.srcObject = localStream; // Affichage de la fenêtre capturé sur la page web
   redrawHomepageAfterStartCall();
 
@@ -110,10 +109,35 @@ sallesContainer.onclick = async (e) => {
 async function makeCall(roomID) {
     createPeerConnection(roomID);
 
+    /*const transceiver = peerConnection.getTransceivers().find(t => t.sender.track && t.sender.track.kind ==='video');
+
+    if (transceiver) {
+      const capa = RTCRtpReceiver.getCapabilities('video');
+      const h264 = capa.codecs.filter(c => c.mimeType === 'video/H264');
+
+      if (h264.length > 0) {
+        transceiver.setCodecPreferences(h264);
+      }
+    }*/
+
     const offer = await peerConnection.createOffer();
+
+
     signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
     await peerConnection.setLocalDescription(offer);                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
-}
+
+    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind ==='video');
+
+    if (sender) {
+      const params = sender.getParameters();
+      if (!params.encoding) { params.encoding = [{}];}
+
+      params.encoding[0].maxBitrate = 3000000;
+      params.encoding[0].minBitrate = 3000000;
+
+      await sender.setParameters(params);
+    }
+  }
 
 async function handleAnswer(answer) {
     if (!peerConnection) {
