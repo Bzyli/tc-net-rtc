@@ -35,7 +35,7 @@ let peerConnection;
 const params = new URLSearchParams(window.location.search);
 const roomID = params.get('roomID');
 
-title.innerText += " " + url + "and select " + roomID + " to start streaming !";
+title.innerText += " " + url + " and select <strong>" + roomID + "</strong> to start streaming !";
 
 let signaling;
 try {
@@ -101,12 +101,12 @@ function createPeerConnection() {
         const message = {
             type : 'candidate',
             candidate : null,
+            roomId : roomID,
         };
         if (e.candidate) {
             message.candidate = e.candidate.candidate;
             message.sdpMid = e.candidate.sdpMid;
             message.sdpMLineIndex = e.candidate.sdpMLineIndex;
-            message.roomId = roomID;
         }
         console.log(message);
         signaling.send(JSON.stringify(message));
