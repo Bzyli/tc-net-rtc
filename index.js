@@ -69,7 +69,7 @@ function redrawHomepageAfterStartCall() {
 
 //--------------  WEBRTC LOGIC ------------------
 function createPeerConnection(roomID) {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:turn.tc-net.bzy.li', username : 'test', credential :'test'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }, {urls: 'turn:turn.tc-net.bzy.li:3478', username : 'tc-net', credential :'tc-net'}]});
     // API de WebRTC, on instancie l'object RTCPeerConnection avec éventuellement des serveurs stun et turn (pas forcément nécessaire sur Eduroam ?)
     peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState); // On affiche l'état de la découverte des pairs dans la console
     peerConnection.onicecandidate = e => { // On découvre un candidat ICE

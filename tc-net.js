@@ -1,21 +1,3 @@
-// STUN/TURN SERVER
-const Turn = require('node-turn');
-
-const turnServer = new Turn({
-  authMech: 'long-term',
-  credentials: {
-    test: 'test'
-  },
-  listeningPort : 3478,
-  maxAllocateLifetime : 7200,
-  minPort: 49152,
-  maxPort: 49250,
-  debugLevel : 'INFO'
-})
-
-turnServer.start();
-console.log("[TURN/STUN] Server is running on port 3478")
-
 // SIGNALING SERVER
 const WebSocket = require('ws');
 

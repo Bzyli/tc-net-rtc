@@ -89,7 +89,7 @@ async function hangup() {
 };
 
 function createPeerConnection() {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, {urls: 'turn:turn.tc-net.bzy.li', username : 'test', credential :'test'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }, {urls: 'turn:turn.tc-net.bzy.li:3478', username : 'tc-net', credential :'tc-net'}]});
     peerConnection.oniceconnectionstatechange = () => {
       const state = peerConnection.iceConnectionState;
       console.log('ICE state:', state);
