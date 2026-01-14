@@ -11,7 +11,6 @@ RUN npm install
 # It will be provided via a volume mount
 
 EXPOSE 3000
-EXPOSE 3478
 EXPOSE 3001
 
 CMD ["node", "tc-net.js"]
