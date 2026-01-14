@@ -35,7 +35,7 @@ let peerConnection;
 const params = new URLSearchParams(window.location.search);
 const roomID = params.get('roomID');
 
-title.innerText += " " + url + " and select <strong>" + roomID + "</strong> to start streaming !";
+title.innerHTML += " " + url + " and select <strong> " + roomID + " </strong> to start streaming !";
 
 let signaling;
 try {
