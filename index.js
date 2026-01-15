@@ -130,6 +130,8 @@ sallesContainer.onclick = async (e) => {
 async function makeCall(roomID) {
     createPeerConnection(roomID);
 
+    monitor(peerConnection);
+
     const offer = await peerConnection.createOffer();
 
     const new_sdp = forceH264(offer.sdp)
@@ -194,4 +196,11 @@ async function hangup() {
 }
 
 
-
+const monitor = (pc) => {
+    const el = document.body.appendChild(document.createElement('div'));
+    el.style.cssText = "position:fixed;top:0;right:0;background:#000;color:#0f0;padding:5px;z-index:99;font-family:monospace";
+    setInterval(async () => {
+        (await pc?.getStats())?.forEach(r => r.type === 'candidate-pair' && r.state === 'succeeded' ? 
+            el.innerText = `RTT: ${(r.currentRoundTripTime*1000)|0}ms | Total: ~${(r.currentRoundTripTime*500 + 90)|0}ms` : 0);
+    }, 1000);
+};
