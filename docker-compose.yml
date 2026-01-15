@@ -1,0 +1,45 @@
+services:
+
+    caddy:
+      ports:
+        - "443:443"
+        - "80:80"
+        - "443:443/udp"
+      image: caddy:latest
+      container_name: caddy
+      restart: unless-stopped
+      volumes:
+        - ./Caddyfile:/etc/caddy/Caddyfile:Z
+        - ./site:/srv/:Z
+        - caddy_data:/data:Z
+      networks:
+        - tc-net
+    
+
+    tc-net-backend:
+      container_name: tc-net-backend
+      restart: unless-stopped  
+      build: ./tc-net/
+      expose:
+        - "3000"
+        - "3001"
+      networks:
+        - tc-net
+    
+
+    coturn:
+      container_name: coturn
+      network_mode: host
+      image: coturn/coturn
+      restart: unless-stopped
+      volumes:
+        - ./coturn.conf:/etc/coturn/turnserver.conf:Z
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  tc-net:
+    driver: bridge
+

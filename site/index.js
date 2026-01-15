@@ -127,8 +127,8 @@ async function logVideoCodec(pc) {
 //--------------  START CALL ---------------
 let globalRoomID;
 sallesContainer.onclick = async (e) => {
-  if (e.target.nodeName !== 'BUTTON') {return;}
-  if (e.target.className !== 'rooms') {return;}
+  if (e.target.nodeName !== 'BUTTON') return;
+  if (e.target.className !== 'rooms') return;
   let roomID = e.target.id;
   globalRoomID = roomID;
   localStream = await navigator.mediaDevices.getDisplayMedia({audio : false, video: {frameRate : {ideal : 30}, width : { max : 1920, ideal : 1280}, height : {max : 1080, ideal : 720}}}); // https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getDisplayMedia

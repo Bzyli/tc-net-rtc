@@ -1,4 +1,2 @@
-node_modules/*
-package-lock.json
-certs/
-sender2.html
+tc-net/node_modules/*
+tc-net/package-lock.json

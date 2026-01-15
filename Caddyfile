@@ -1,0 +1,12 @@
+tc-net.bzy.li {
+	root * /srv
+	file_server
+}
+
+ws.tc-net.bzy.li {
+    reverse_proxy tc-net-backend:3000
+}
+
+api.tc-net.bzy.li {
+    reverse_proxy tc-net-backend:3001
+}
