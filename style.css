@@ -16,6 +16,9 @@ h1 {
 
 #salles {
         display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
         
 }
 
@@ -38,6 +41,7 @@ button {
   text-transform: uppercase;
   font-size: 15px;
   transition: all 0.5s ease;
+  margin : 2%;
 }
 
 button:hover {

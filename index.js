@@ -89,6 +89,27 @@ function createPeerConnection(roomID) {
     };
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); // On partage le flux vidéo en local vers la connection WebRTC
 };
+
+function forceH264(sdp) {
+  const lines = sdp.split('\r\n');
+
+  const h264Pts = lines
+    .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
+    .map(l => l.match(/a=rtpmap:(\d+)/)[1]);
+
+  return lines.filter(line => {
+    if (line.startsWith('m=video')) {
+      const parts = line.split(' ');
+      return parts.slice(0, 3).concat(h264Pts).join(' ');
+    }
+    if (line.startsWith('a=rtpmap:') ||
+        line.startsWith('a=fmtp:') ||
+        line.startsWith('a=rtcp-fb:')) {
+      return h264Pts.some(pt => line.includes(`:${pt}`));
+    }
+    return true;
+  }).join('\r\n');
+}
 //--------------  END OF WEBRTC LOGIC ------------------
 
 //--------------  START CALL ---------------
@@ -109,22 +130,12 @@ sallesContainer.onclick = async (e) => {
 async function makeCall(roomID) {
     createPeerConnection(roomID);
 
-    /*const transceiver = peerConnection.getTransceivers().find(t => t.sender.track && t.sender.track.kind ==='video');
-
-    if (transceiver) {
-      const capa = RTCRtpReceiver.getCapabilities('video');
-      const h264 = capa.codecs.filter(c => c.mimeType === 'video/H264');
-
-      if (h264.length > 0) {
-        transceiver.setCodecPreferences(h264);
-      }
-    }*/
-
     const offer = await peerConnection.createOffer();
 
+    const new_sdp = forceH264(offer.sdp)
 
-    signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
-    await peerConnection.setLocalDescription(offer);                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
+    signaling.send(JSON.stringify({type: 'offer', sdp: new_sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
+    await peerConnection.setLocalDescription({type : 'offer', sdp : new_sdp});                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
 
     const sender = peerConnection.getSenders().find(s => s.track && s.track.kind ==='video');
 
@@ -132,8 +143,8 @@ async function makeCall(roomID) {
       const params = sender.getParameters();
       if (!params.encoding) { params.encoding = [{}];}
 
-      params.encoding[0].maxBitrate = 3000000;
-      params.encoding[0].minBitrate = 3000000;
+      params.encoding[0].maxBitrate = 5000000;
+      params.encoding[0].minBitrate = 5000000;
 
       await sender.setParameters(params);
     }
