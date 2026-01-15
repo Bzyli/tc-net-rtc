@@ -90,26 +90,38 @@ function createPeerConnection(roomID) {
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream)); // On partage le flux vidéo en local vers la connection WebRTC
 };
 
-function forceH264(sdp) {
-  const lines = sdp.split('\r\n');
+// debug function
+async function logVideoCodec(pc) {
+  const stats = await pc.getStats();
 
-  const h264Pts = lines
-    .filter(l => l.startsWith('a=rtpmap') && l.includes('H264'))
-    .map(l => l.match(/a=rtpmap:(\d+)/)[1]);
+  let codecMap = {};
+  let activeVideoCodecId = null;
 
-  return lines.filter(line => {
-    if (line.startsWith('m=video')) {
-      const parts = line.split(' ');
-      return parts.slice(0, 3).concat(h264Pts).join(' ');
+  stats.forEach(report => {
+    // Collect codec definitions
+    if (report.type === "codec") {
+      codecMap[report.id] = report;
     }
-    if (line.startsWith('a=rtpmap:') ||
-        line.startsWith('a=fmtp:') ||
-        line.startsWith('a=rtcp-fb:')) {
-      return h264Pts.some(pt => line.includes(`:${pt}`));
+
+    // Find the active video RTP stream
+    if (
+      (report.type === "inbound-rtp" || report.type === "outbound-rtp") &&
+      report.kind === "video"
+    ) {
+      activeVideoCodecId = report.codecId;
     }
-    return true;
-  }).join('\r\n');
+  });
+
+  if (activeVideoCodecId && codecMap[activeVideoCodecId]) {
+    const codec = codecMap[activeVideoCodecId];
+    console.log(
+      `Video codec: ${codec.mimeType} (${codec.clockRate} Hz)`
+    );
+  } else {
+    console.log("Video codec not found");
+  }
 }
+
 //--------------  END OF WEBRTC LOGIC ------------------
 
 //--------------  START CALL ---------------
@@ -134,10 +146,8 @@ async function makeCall(roomID) {
 
     const offer = await peerConnection.createOffer();
 
-    const new_sdp = forceH264(offer.sdp)
-
-    signaling.send(JSON.stringify({type: 'offer', sdp: new_sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
-    await peerConnection.setLocalDescription({type : 'offer', sdp : new_sdp});                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
+    signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
+    await peerConnection.setLocalDescription(offer);                                  // On met a jour la LocalDescription (ce qu'on va recevoir, ...)
 
     const sender = peerConnection.getSenders().find(s => s.track && s.track.kind ==='video');
 
@@ -145,8 +155,8 @@ async function makeCall(roomID) {
       const params = sender.getParameters();
       if (!params.encoding) { params.encoding = [{}];}
 
-      params.encoding[0].maxBitrate = 5000000;
-      params.encoding[0].minBitrate = 5000000;
+      params.encoding[0].maxBitrate = 3000000;
+      params.encoding[0].minBitrate = 3000000;
 
       await sender.setParameters(params);
     }
