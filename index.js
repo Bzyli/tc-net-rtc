@@ -205,12 +205,13 @@ async function hangup() {
     getRoomsInterval = setInterval(getRooms, 5000);
 }
 
-
+//Mesure de la latence
 const monitor = (pc) => {
     const el = document.body.appendChild(document.createElement('div'));
-    el.style.cssText = "position:fixed;top:0;right:0;background:#000;color:#0f0;padding:5px;z-index:99;font-family:monospace";
-    setInterval(async () => {
-        (await pc?.getStats())?.forEach(r => r.type === 'candidate-pair' && r.state === 'succeeded' ? 
-            el.innerText = `RTT: ${(r.currentRoundTripTime*1000)|0}ms | Total: ~${(r.currentRoundTripTime*500 + 90)|0}ms` : 0);
+    el.style.cssText = "position:fixed;top:0;right:0;color:#0f0;background:#000;z-index:9";
+    const id = setInterval(async () => {
+        if (!pc || pc.connectionState === 'closed') { clearInterval(id); el.remove(); return; }
+        (await pc.getStats())?.forEach(r => r.type === 'candidate-pair' && r.state === 'succeeded' && 
+            (el.innerText = `RTT:${(r.currentRoundTripTime*1000)|0}ms | Lat:~${(r.currentRoundTripTime*500+90)|0}ms`));
     }, 1000);
 };
