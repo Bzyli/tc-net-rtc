@@ -144,21 +144,6 @@ async function makeCall(roomID) {
 
     monitor(peerConnection);
 
-    const transceiver = pc.getTransceivers().find(t => t.receiver.track.kind === 'video');
-
-    if (transceiver && RTCRtpReceiver.getCapabilities) {
-        const capabilities = RTCRtpReceiver.getCapabilities('video');
-  
-      // only keep h264 codecs list
-      const h264Codecs = capabilities.codecs.filter(codec => 
-        codec.mimeType.toLowerCase() === 'video/h264'
-      );
-
-      if (h264Codecs.length > 0) {
-        transceiver.setCodecPreferences(h264Codecs); //send them
-      }
-    }
-
     const offer = await peerConnection.createOffer();
 
     signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
