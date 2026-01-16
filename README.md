@@ -12,15 +12,24 @@ The project has 3 main parts :
 ### Prerequisites
 - [ ] A podman/docker host, reachable from the internet
 - [ ] A domain
-- [ ] Ports 80, 443, 3478, 49152-49250 opened in your firewall and pointing to your server
+- [ ] Ports 80/tcp, 443/tcp, 3478/tcp-udp, 49152-49250/udp opened in your firewall and pointing to your server
 
 ### DNS
 On your domain administration page, create those entries : 
-| Record Type   | Host     | Value  |
-| :-------------: |:-------------:| -----:|
-| A      | * | $1600 |
-| AAAA      |    *   |   $12 |
-| zebra stripes | are neat      |    $1 |
+| Record Type     | Host            | Value                                 |
+| :-------------: |:---------------:| :------------------------------------:|
+| A               | api             | x.x.x.x [replace with your server IP] |
+| A               | ws              | x.x.x.x [replace with your server IP] |
+| A               | stun            | x.x.x.x [replace with your server IP] |
+| A               | turn            | x.x.x.x [replace with your server IP] |
+| A               | .               | x.x.x.x [replace with your server IP] |
+
+> [!NOTE]
+> If you are already using a subdomain of your domain for this project, you could just create two DNS entries :
+>| Record Type     | Host            | Value                                 |
+>| :-------------: |:---------------:| :------------------------------------:|
+>| A               | subdomain       | x.x.x.x [replace with your server IP] |
+>| A               | *.subdomain     | x.x.x.x [replace with your server IP] |
 
 ### Configuring caddy
 The included Caddyfile looks like this :
@@ -71,7 +80,7 @@ log-file=/var/tmp/turn.log
 
 You can also change the port range if you want something bigger (You also need to update your firewall !)
 
-> [!NOTE]
+> [!WARNING]
 > If you decide to change the TURN password, you also need to do it in the `site/index.js` and `site/receive.html` files
 
 ### Running
