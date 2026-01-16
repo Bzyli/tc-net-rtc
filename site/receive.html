@@ -29,8 +29,10 @@
 <script>
 const remoteVideo = document.getElementById('remoteVideo');
 const title = document.getElementById('title');
+
 let url = window.location.protocol + '//' + window.location.host;
 const serverURL = window.location.host;
+
 let peerConnection;
 
 const params = new URLSearchParams(window.location.search);
@@ -126,6 +128,15 @@ async function handleOffer(offer) {
   }
   await createPeerConnection();
   await peerConnection.setRemoteDescription(offer);
+
+  const transceiver = peerConnection.getTransceivers()[0];
+  const codecs = RTCRtpReceiver.getCapabilities('video').codecs;
+
+  const preferredCodecs = codecs.filter(c => 
+    c.mimeType === 'video/H264' || c.mimeType === 'video/rtx'
+  );
+
+  transceiver.setCodecPreferences(preferredCodecs);
 
   const answer = await peerConnection.createAnswer();
   signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp, roomID : roomID}));
