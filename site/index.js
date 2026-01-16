@@ -157,8 +157,8 @@ async function makeCall(roomID) {
       const params = sender.getParameters();
       if (!params.encoding) { params.encoding = [{}];}
 
-      params.encoding[0].maxBitrate = 3000000;
-      params.encoding[0].minBitrate = 3000000;
+      params.encoding[0].maxBitrate = 8000000;
+      params.encoding[0].minBitrate = 8000000;
 
       await sender.setParameters(params);
     }
@@ -214,6 +214,6 @@ const monitor = (pc) => {
     const id = setInterval(async () => {
         if (!pc || pc.connectionState === 'closed') { clearInterval(id); el.remove(); return; }
         (await pc.getStats())?.forEach(r => r.type === 'candidate-pair' && r.state === 'succeeded' && 
-            (el.innerText = `RTT:${(r.currentRoundTripTime*1000)|0}ms | Lat:~${(r.currentRoundTripTime*500+90)|0}ms`));
+            (el.innerText = `RTT:${(r.currentRoundTripTime*1000)|0}ms | Lat:~${(r.currentRoundTripTime*500+353)|0}ms`));
     }, 1000);
 };
