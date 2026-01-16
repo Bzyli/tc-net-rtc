@@ -1,2 +1,5 @@
 tc-net/node_modules/*
 tc-net/package-lock.json
+node_modules/*
+package-lock.json
+
