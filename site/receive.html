@@ -129,15 +129,6 @@ async function handleOffer(offer) {
   await createPeerConnection();
   await peerConnection.setRemoteDescription(offer);
 
-  const transceiver = peerConnection.getTransceivers()[0];
-  const codecs = RTCRtpReceiver.getCapabilities('video').codecs;
-
-  const preferredCodecs = codecs.filter(c => 
-    c.mimeType === 'video/H264' || c.mimeType === 'video/rtx'
-  );
-
-  transceiver.setCodecPreferences(preferredCodecs);
-
   const answer = await peerConnection.createAnswer();
   signaling.send(JSON.stringify({type: 'answer', sdp: answer.sdp, roomID : roomID}));
   await peerConnection.setLocalDescription(answer);
