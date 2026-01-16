@@ -191,7 +191,7 @@ async function handleCandidate(candidate) {
 
 //-------------- ENDING CALL --------------
 window.onbeforeunload =  () => {
-    signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
+  if(globalRoomID !== null) signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
 }
 
 async function hangup() {
@@ -202,6 +202,8 @@ async function hangup() {
     }
     localVideo.srcObject = null;
     signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
+
+    globalRoomID = null;
 
     getRooms();
     getRoomsInterval = setInterval(getRooms, 5000);
