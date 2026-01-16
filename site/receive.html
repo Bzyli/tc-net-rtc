@@ -30,6 +30,7 @@
 const remoteVideo = document.getElementById('remoteVideo');
 const title = document.getElementById('title');
 let url = window.location.protocol + '//' + window.location.host;
+const serverURL = window.location.host;
 let peerConnection;
 
 const params = new URLSearchParams(window.location.search);
@@ -39,7 +40,7 @@ title.innerHTML += " " + url + " and select <strong> " + roomID + " </strong> to
 
 let signaling;
 try {
-  signaling = new WebSocket('wss://ws.tc-net.bzy.li');
+  signaling = new WebSocket('wss://ws.' + serverURL);
 } catch (e) {
   alert('exception: ' + e.message);
 }
@@ -89,7 +90,7 @@ async function hangup() {
 };
 
 function createPeerConnection() {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }, {urls: 'turn:turn.tc-net.bzy.li:3478', username : 'tc-net', credential :'tc-net'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.' + serverURL + ':3478' }, {urls: 'turn:turn' + serverURL + ':3478', username : 'tc-net', credential :'tc-net'}]});
     peerConnection.oniceconnectionstatechange = () => {
       const state = peerConnection.iceConnectionState;
       console.log('ICE state:', state);

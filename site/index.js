@@ -1,8 +1,10 @@
 const sallesContainer = document.getElementById('salles');
 const localVideo = document.getElementById('localVideo');
+const serverUrl = window.location.host;
+
 
 //--------------  WEBSOCKET CONNECTION ---------------
-const signaling = new WebSocket('wss://ws.tc-net.bzy.li'); // Serveur de signalement
+const signaling = new WebSocket('wss://ws.'+ serverUrl); // Serveur de signalement
 signaling.onmessage = e => {
     if (!localStream) {
         console.log('Not ready yet'); // On a pas encore pu obtenir le flux vidéo de l'utilisateur qui veut diffuser 
@@ -37,7 +39,7 @@ function generateRoomCard(name) {
 }
 
 async function getRooms() {
-  const url = "https://api.tc-net.bzy.li/api/rooms";
+  const url = "https://api." + serverUrl + "/api/rooms";
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -69,7 +71,7 @@ function redrawHomepageAfterStartCall() {
 
 //--------------  WEBRTC LOGIC ------------------
 function createPeerConnection(roomID) {
-    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }, {urls: 'turn:turn.tc-net.bzy.li:3478', username : 'tc-net', credential :'tc-net'}]});
+    peerConnection = new RTCPeerConnection({iceServers: [{ urls: 'stun:stun.' + serverUrl + ':3478'}, {urls: 'turn:turn.' + serverUrl +':3478', username : 'tc-net', credential :'tc-net'}]});
     // API de WebRTC, on instancie l'object RTCPeerConnection avec éventuellement des serveurs stun et turn (pas forcément nécessaire sur Eduroam ?)
     peerConnection.oniceconnectionstatechange = () => console.log('ICE state:', peerConnection.iceConnectionState); // On affiche l'état de la découverte des pairs dans la console
     peerConnection.onicecandidate = e => { // On découvre un candidat ICE
