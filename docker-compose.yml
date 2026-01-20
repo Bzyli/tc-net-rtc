@@ -10,7 +10,7 @@ services:
       restart: unless-stopped
       volumes:
         - ./Caddyfile:/etc/caddy/Caddyfile:Z
-        - ./site:/srv/:Z
+        - ./www:/srv/:Z
         - caddy_data:/data:Z
       networks:
         - tc-net

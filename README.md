@@ -1,8 +1,27 @@
 # TC-NET-RTC
 Screen streaming using WebRTC and Eduroam
 
+## Organization of the git repo
+```
+├── Caddyfile               # Config file for the HTTPS server
+├── coturn.conf             # Config file for the STUN/TURN server
+├── docker-compose.yml      # Infrastructure deployment instructions
+├── docs_rasp               # Docs related to building a Pi Image that fits our needs
+│   └── raspberry.md        # Manual image building
+├── README.md               # This file
+├── www                     # html pages                    
+│   ├── index.html          # Sending page
+│   ├── index.js            # Main page logic (WebRTC sender)
+│   ├── receive.html        # Receiving page logic (WebRTC receiver)
+│   └── style.css
+└── tc-net                  # Website backend directory
+    ├── Dockerfile          # Container build instructions
+    ├── package.json        # Dependencies
+    └── tc-net.js           # Signaling/API server
+```
+
 ## Project architecture
-The project has 3 main parts :
+The project server has 3 main parts :
 - webserver : Caddy
 - backend : tc-net-backend (node)
 - STUN/TURN server : Coturn
