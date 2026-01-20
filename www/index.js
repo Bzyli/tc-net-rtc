@@ -191,7 +191,10 @@ async function handleCandidate(candidate) {
 
 //-------------- ENDING CALL --------------
 window.onbeforeunload =  () => {
-  if(globalRoomID !== null) signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
+  if(globalRoomID != null ) {
+      signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
+      return 'If you leave now the stream will end';
+  } 
 }
 
 async function hangup() {
