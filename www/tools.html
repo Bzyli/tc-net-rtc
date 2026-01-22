@@ -38,8 +38,10 @@
     </div>
 
     <script>
-        const API = 'https://api.tc-net.bzy.li/api/rooms';
-        const WS_URL = 'wss://ws.tc-net.bzy.li';
+        const serverUrl = window.location.host;
+        const API = 'https://api.' + serverUrl + '/api/rooms';
+        const WS_URL = 'wss://ws.' + serverUrl;
+        
         
         let L = document.getElementById('L'), S = document.getElementById('S');
         let C = document.getElementById('C').getContext('2d');
@@ -67,7 +69,7 @@
 
             let stream = C.canvas.captureStream(30);
             ws = new WebSocket(WS_URL);
-            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }] });
+            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.' + serverUrl + ':3478' }, {urls: 'turn:turn.' + serverUrl +':3478', username : 'tc-net', credential :'tc-net'}] });
             stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
             // RTT
@@ -108,6 +110,7 @@
                 } 
                 else if (d.candidate && d.candidate.includes('PONG') && T) {
                     document.getElementById('R').innerText = (Date.now() - T) + " ms"; T = 0;
+                    ws.send(JSON.stringify({type: 'bye', roomID: room}));
                 } 
                 else if (d.candidate) try { pc.addIceCandidate(d); } catch (x) {}
             };

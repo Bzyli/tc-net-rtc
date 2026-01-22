@@ -49,14 +49,14 @@ L’interface graphique minimale sera installée uniquement pour les besoins de 
    - Storage : carte SD
 3. (Options avancées) :
    - Activer SSH
-   - Configurer le Wi‑Fi
+   - Configurer le Wi‑Fi : chosir le wifi 
    - Définir le nom d’hôte
    - Créer l’utilisateur
 4. Flasher la carte SD
 
 ### 4.2 Méthode 2 : Rufus (Windows)
 
-1. Télécharger l’image `.img.xz` de Raspberry Pi OS Lite
+1. Télécharger l’image `.img.xz` de Raspberry Pi OS Lite sur le site officiel : https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-12-04/2025-12-04-raspios-trixie-arm64-lite.img.xz
 2. Ouvrir Rufus
 3. Sélectionner l’image et la carte SD
 4. Lancer le flash
@@ -64,32 +64,60 @@ L’interface graphique minimale sera installée uniquement pour les besoins de 
 ### 4.3 Méthode 3 : dd (Linux)
 
 ```bash
-xzcat raspberry-pi-os-lite.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
+wget https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-12-04/2025-12-04-raspios-trixie-arm64-lite.img.xz
+xzcat 2025-12-04-raspios-trixie-arm64.img.xz | sudo dd of=/dev/sdX bs=4M status=progress conv=fsync
 ```
-
 
 ---
 
 ## 5. Premier démarrage et configuration initiale
 
-Après le flash de la carte SD et le premier démarrage :
+L’expérience du premier allumage dépend directement de la **méthode de préparation de la carte SD** utilisée à l’étape 4.
+
+### 5.1 Assistant de configuration (Méthodes 2 & 3 : Rufus / dd)
+
+Lorsque l’image Raspberry Pi OS Lite a été flashée **sans pré‑configuration**, le système démarre sur un **assistant interactif**.
+
+Les étapes principales sont les suivantes :
+
+- **Configuration du clavier**  
+  Sélectionner :  
+  `Other` → `French` → `French – French (AZERTY)`
+
+- **Création de l’utilisateur**  
+  - Nom d’utilisateur : `pi`  
+  - Mot de passe : `raspberry`
+
+- **Connexion**  
+  Une fois l’assistant terminé, le système affiche une console.  
+  Se connecter avec :
+  ```
+  login: pi
+  password: raspberry
+  ```
+
+---
+
+### 5.2 Cas de la Méthode 1 : Raspberry Pi Imager
+
+Si les **options avancées** de Raspberry Pi Imager ont été utilisées lors du flashage (création de l’utilisateur, configuration réseau, activation SSH), l’assistant de configuration n’apparaît pas.
+
+Le système démarre directement sur une **console**.  
+Il suffit alors de se connecter avec l’utilisateur (pi) défini lors de la préparation de la carte SD.
+
+---
+
+### 5.3 Mise à jour initiale du système
+
+> **NB** : Nous faisons cette partie à fin pour les méthodes (2 & 3).
+
+Quelle que soit la méthode utilisée, il est recommandé d’effectuer immédiatement une mise à jour complète du système :
 
 ```bash
 sudo apt update && sudo apt full-upgrade -y
 ```
 
-Configuration de base avec `raspi-config` :
-
-```bash
-sudo raspi-config
-```
-
-Paramètres importants :
-- Localisation (clavier, langue, fuseau horaire)
-- Activation SSH
-- Configuration réseau si nécessaire
-
-Redémarrage :
+Redémarrer ensuite le système :
 
 ```bash
 sudo reboot
@@ -97,25 +125,119 @@ sudo reboot
 
 ---
 
-## 6. Configuration du réseau
+## 6. Configuration du réseau et mises à jour
 
-### 6.1 Connexion Wi-Fi / Eduroam
+Cette section décrit la configuration complète du réseau, depuis le déblocage du Wi‑Fi jusqu’à la connexion automatique au réseau **Eduroam**, ainsi que les mises à jour initiales du système.
 
-Le Raspberry Pi peut être connecté soit via Wi-Fi classique, soit via **Eduroam** (en environnement universitaire).
+---
 
-Installation de NetworkManager (déjà présent par défaut sur Raspberry Pi OS récent) et configuration via interface texte :
+### 6.1 Déblocage du Wi‑Fi (rfkill)
+
+Lors du premier démarrage, il est fréquent que l’interface Wi‑Fi soit bloquée par défaut. Le message suivant peut apparaître :
+
+> *Wi‑Fi is currently blocked by rfkill*
+
+Ce blocage est généralement dû à l’absence de définition du **pays d’utilisation du Wi‑Fi**, exigée pour des raisons réglementaires.
+
+#### 6.1.1 Définition du pays Wi‑Fi
+
+Lancer l’outil de configuration :
 
 ```bash
-sudo nmtui
+sudo raspi-config
 ```
 
-Pour Eduroam, utilisation de l’outil officiel :
+Dans le menu :
+- `5 Localisation Options`
+- `L4 WLAN Country`
+- Sélectionner `FR France`
+- Valider avec `Finish`
+
+Cette étape est indispensable pour activer correctement l’interface Wi‑Fi.
+
+#### 6.1.2 Déblocage de l’interface Wi‑Fi
+
+Exécuter ensuite la commande suivante afin de lever tous les blocages radio :
 
 ```bash
-sudo wget https://github.com/geteduroam/linux-app/releases/download/0.12/geteduroam-cli_linux_arm64.deb
+sudo rfkill unblock all
+```
+
+---
+
+### 6.2 Connexion réseau temporaire (Wi‑Fi ou Ethernet)
+
+Pour poursuivre la configuration, une connexion réseau fonctionnelle est nécessaire.
+
+Deux solutions sont possibles :
+- connexion filaire via câble Ethernet (solution la plus simple),
+- connexion temporaire à un réseau Wi‑Fi classique.
+
+Connexion à un réseau Wi‑Fi via NetworkManager :
+
+```bash
+sudo nmcli --ask dev wifi connect "Nom_du_WiFi"
+```
+
+Le mot de passe du réseau est demandé de manière interactive.
+
+---
+
+### 6.3 Installation de l’outil de connexion Eduroam
+
+La connexion au réseau **Eduroam** est réalisée à l’aide de l’outil officiel `geteduroam`.
+
+Téléchargement du paquet :
+
+```bash
+wget https://github.com/geteduroam/linux-app/releases/download/0.12/geteduroam-cli_linux_arm64.deb
+```
+
+Installation :
+
+```bash
 sudo apt install ./geteduroam-cli_linux_arm64.deb
+```
+
+---
+
+### 6.4 Configuration de la connexion Eduroam
+
+Lancer l’outil interactif :
+
+```bash
 sudo geteduroam-cli
 ```
+
+Suivre ensuite les instructions affichées à l’écran :
+
+- **Organisation**  
+  À la question *Please enter your organization*, saisir :  
+  `INSA Lyon`
+
+- **Choix de l’établissement**  
+  Une liste d’organisations s’affiche. Entrer le numéro correspondant à **INSA Lyon** (`6`).
+
+- **Identifiants institutionnels**  
+  - *Please enter your username* : identifiant institutionnel
+  - *Please enter your password* : mot de passe habituel
+  - *Please confirm your password* : confirmation du mot de passe
+
+---
+
+### 6.5 Finalisation et vérification
+
+Si la configuration est correcte, le message suivant s’affiche :
+
+> *The eduroam profile has been added to NetworkManager*
+
+Cela signifie que :
+- le profil Eduroam a été correctement installé,
+- la connexion est désormais **automatique au démarrage**.
+
+Une vérification peut être effectuée en désactivant toute autre connexion (partage de connexion, Ethernet) et en redémarrant le Raspberry Pi.
+
+Le système doit alors se connecter automatiquement au réseau Eduroam sans intervention manuelle.
 
 Les fichiers de configuration générés sont stockés dans :
 
@@ -124,6 +246,7 @@ Les fichiers de configuration générés sont stockés dans :
 ```
 
 ---
+
 
 ## 7. Installation de l’environnement graphique minimal
 

@@ -181,10 +181,8 @@ async function handleCandidate(candidate) {
     c.width = 1; c.height = 1;
     let ctx = c.getContext('2d', { willReadFrequently: true });
     
-    // Récupération ID de la salle
-    let myRoom = new URLSearchParams(window.location.search).get('roomID') || 'test';
 
-    console.log("Module Latence activé sur : " + myRoom);
+    console.log("Module Latence activé sur : " + roomID);
 
     setInterval(() => {
         // On ne scanne que si la vidéo joue et que le WebSocket est connecté
@@ -203,7 +201,7 @@ async function handleCandidate(candidate) {
                         candidate: 'candidate:PONG',
                         sdpMid: '0',
                         sdpMLineIndex: 0,
-                        roomID: myRoom
+                        roomID: roomID
                     }));
                 }
             }
