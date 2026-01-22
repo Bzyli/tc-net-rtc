@@ -21,9 +21,25 @@
     width: 100%;
     color:white;
 }
+
+/*https://uiverse.io/barisdogansutcu/fuzzy-bullfrog-72*/
+button {
+  padding: 17px 40px;
+  border-radius: 50px;
+  cursor: pointer;
+  border: 0;
+  background-color: white;
+  box-shadow: rgb(0 0 0 / 5%) 0 0 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-size: 15px;
+  transition: all 0.5s ease;
+  margin : 2%;
+}
+
 </style>
 <body>
-    <h1 id='title'> Page loaded ! <br> Go to : </h1>
+    <h1 id='title'> Go to : </h1>
     <video id='remoteVideo' autoplay playsinline muted style="width: 100%; height: 100%; display: none;"></video>
 </body>
 <script>
@@ -38,7 +54,7 @@ let peerConnection;
 const params = new URLSearchParams(window.location.search);
 const roomID = params.get('roomID');
 
-title.innerHTML += " " + url + " and select <strong> " + roomID + " </strong> to start streaming !";
+title.innerHTML += " <button>" + url + "</button> and select <button> " + roomID + " </button> to start streaming !";
 
 let signaling;
 try {

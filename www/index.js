@@ -146,6 +146,19 @@ async function makeCall(roomID) {
 
     monitor(peerConnection);
 
+    let tcvr = peerConnection.getTransceivers()[0];
+    let codecs = RTCRtpReceiver.getCapabilities('video').codecs;
+    const h264Codecs = codecs.filter(codec => codec.mimeType === 'video/H264');
+    const otherCodecs = codecs.filter(codec => codec.mimeType !== 'video/H264');
+
+    const preferredCodecs = [...h264Codecs, ...otherCodecs];
+
+    if(tcvr.setCodecPreferences != undefined) {
+      tcvr.setCodecPreferences(preferredCodecs);
+    } else {
+      console.log('unsupported');
+    }
+
     const offer = await peerConnection.createOffer();
 
     signaling.send(JSON.stringify({type: 'offer', sdp: offer.sdp, roomID : roomID})); // On envoi l'offre de diffusion vers le websocket
@@ -193,7 +206,7 @@ async function handleCandidate(candidate) {
 window.onbeforeunload =  () => {
   if(globalRoomID != null ) {
       signaling.send(JSON.stringify({type : 'bye', roomID : globalRoomID})); // On prévient le signaling server qu'on raccroche
-      return 'If you leave now the stream will end';
+      return true;
   } 
 }
 
