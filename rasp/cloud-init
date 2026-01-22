@@ -1,0 +1,62 @@
+#cloud-config
+hostname: raspberry-kiosk
+manage_etc_hosts: true
+user: kiosk
+
+keyboard:
+  model: pc105
+  layout: fr 
+  variant: 
+  options: 
+
+
+# 1. Mise à jour et installation des paquets
+package_update: true
+package_upgrade: true
+
+# 2. Configuration utilisateur et dossier Kiosk
+runcmd:
+  - sudo apt update && sudo apt full-upgrade -y
+  - sudo apt install --no-install-recommends xserver-xorg xinit openbox unclutter lightdm chromium
+  # Création des dossiers de configuration
+  - mkdir -p /home/kiosk/.config/openbox
+  
+  # Configuration de l'autologin LightDM
+  - |
+    cat <<EOF > /etc/lightdm/lightdm.conf
+    '[Seat:*]'
+    autologin-user=kiosk
+    autologin-session=openbox
+    EOF
+
+  # Création du script d'autostart Openbox
+  - |
+    cat <<EOF > /home/kiosk/.config/openbox/autostart
+    #!/bin/bash
+    xset s off
+    xset s noblank
+    xset -dpms
+    unclutter -idle 0.1 -grab -root &
+    xrandr --auto
+    'while :'
+      do
+        chromium --no-first-run --disk-cache-dir=/tmp --disk-cache-size=1 --start-maximized --disable --disable-translate --disable-infobars --disable-suggestions-service --disable-save-password-bubble --disable-session-crashed-bubble --incognito --kiosk "https://tc-net.bzy.li/receive.html?roomID=reunion"
+        sleep 3
+      done &
+    EOF
+  - chmod +x /home/kiosk/.config/openbox/autostart
+  - chown -R kiosk:kiosk /home/kiosk
+
+  # Désactivation de la veille système
+  - systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+  # Désactivation des services inutiles pour le boot rapide
+  - systemctl disable bluetooth.service avahi-daemon.service ModemManager.service udisks2.service
+  - systemctl disable NetworkManager-wait-online.service
+  
+  # Installation de geteduroam-cli (optionnel selon besoin)
+  - wget https://github.com/geteduroam/linux-app/releases/download/0.12/geteduroam-cli_linux_arm64.deb -P /tmp
+  - apt install -y /tmp/geteduroam-cli_linux_arm64.deb
+
+# 3. Message de fin
+final_message: "Le système est prêt après $UPTIME secondes"
