@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tools - Latence & RTT</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { text-align: center; padding-top: 50px; }
+        #S { display: none; }
+        canvas { 
+            background: #000; border: 4px solid #444; 
+            margin: 20px auto; box-shadow: 0 0 30px #000; display: block; 
+        }
+        #R { 
+            font-size: 5em; color: #0f0; margin: 10px 0 0 0; 
+            font-family: monospace; text-shadow: 0 0 10px #0f0; 
+        }
+        #RTT { 
+            font-family: monospace; color: #666; font-size: 1.2em; margin-bottom: 20px; 
+        }
+        #list { display: flex; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
+        .err { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Test de Latence</h1>
+
+    <div id="L">
+        <div id="msg" style="color:#aaa">Recherche des salles...</div>
+        <div id="list"></div>
+    </div>
+
+    <div id="S">
+        <h2 id="R">--- ms</h2>
+        <div id="RTT">RTT: - ms</div> <canvas id="C" width="320" height="180"></canvas>
+        <button onclick="location.reload()">RETOUR</button>
+    </div>
+
+    <script>
+        const API = 'https://api.tc-net.bzy.li/api/rooms';
+        const WS_URL = 'wss://ws.tc-net.bzy.li';
+        
+        let L = document.getElementById('L'), S = document.getElementById('S');
+        let C = document.getElementById('C').getContext('2d');
+        let list = document.getElementById('list'), msg = document.getElementById('msg');
+        let ws, pc, T, loop, rttLoop;
+
+        // AFFICHER SALLES
+        fetch(API).then(r => r.json()).then(r => {
+            msg.style.display = 'none';
+            list.innerHTML = r.length ? r.map(n => `<button onclick="go('${n}')">${n}</button>`).join('') : '<div class="err">Aucune salle active</div>';
+        }).catch(() => msg.innerText = 'Erreur connexion API');
+
+        // LANCER TEST
+        async function go(room) {
+            L.style.display = 'none'; S.style.display = 'block';
+            document.querySelector('h1').innerText = "Test : " + room;
+
+            let to = setTimeout(() => document.getElementById('R').innerHTML = "<span style='color:red;font-size:0.5em'>TIMEOUT</span>", 2500);
+
+            loop = setInterval(() => {
+                if (T) return;
+                C.fillStyle = Math.random() > .5 ? '#111' : '#222';
+                C.fillRect(Math.random() * 320, Math.random() * 180, 40, 40);
+            }, 50);
+
+            let stream = C.canvas.captureStream(30);
+            ws = new WebSocket(WS_URL);
+            pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.tc-net.bzy.li:3478' }] });
+            stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+            // RTT
+            rttLoop = setInterval(async () => {
+                if (!pc) return;
+                const stats = await pc.getStats();
+                stats.forEach(report => {
+                    if (report.type === 'candidate-pair' && report.state === 'succeeded' && report.currentRoundTripTime) {
+                        document.getElementById('RTT').innerText = `RTT: ${(report.currentRoundTripTime * 1000).toFixed(0)} ms`;
+                    }
+                });
+            }, 1000);
+
+            pc.onicecandidate = e => {
+                if (e.candidate) ws.send(JSON.stringify({
+                    type: 'candidate', candidate: e.candidate.candidate,
+                    sdpMid: e.candidate.sdpMid, sdpMLineIndex: e.candidate.sdpMLineIndex, roomID: room
+                }));
+            };
+
+            ws.onopen = async () => {
+                let off = await pc.createOffer(); await pc.setLocalDescription(off);
+                ws.send(JSON.stringify({ type: 'offer', sdp: off.sdp, roomID: room }));
+            };
+
+            ws.onmessage = e => {
+                let d = JSON.parse(e.data);
+                if (d.type == 'answer') {
+                    clearTimeout(to); pc.setRemoteDescription(d);
+                    setTimeout(() => {
+                        clearInterval(loop); C.fillStyle = '#000'; C.fillRect(0, 0, 320, 180);
+                        setTimeout(() => {
+                            T = Date.now(); C.fillStyle = '#00FF00'; C.fillRect(0, 0, 320, 180);
+                            document.getElementById('R').innerText = "...";
+                            setTimeout(() => C.clearRect(0, 0, 320, 180), 200);
+                        }, 200);
+                    }, 1000);
+                } 
+                else if (d.candidate && d.candidate.includes('PONG') && T) {
+                    document.getElementById('R').innerText = (Date.now() - T) + " ms"; T = 0;
+                } 
+                else if (d.candidate) try { pc.addIceCandidate(d); } catch (x) {}
+            };
+        }
+    </script>
+</body>
+</html>

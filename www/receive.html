@@ -174,5 +174,42 @@ async function handleCandidate(candidate) {
   }
 }
 
+//Lantence -> detection du flash
+(function() {
+    let v = document.getElementById('remoteVideo');
+    let c = document.createElement('canvas');
+    c.width = 1; c.height = 1;
+    let ctx = c.getContext('2d', { willReadFrequently: true });
+    
+    // Récupération ID de la salle
+    let myRoom = new URLSearchParams(window.location.search).get('roomID') || 'test';
+
+    console.log("Module Latence activé sur : " + myRoom);
+
+    setInterval(() => {
+        // On ne scanne que si la vidéo joue et que le WebSocket est connecté
+        if (v && v.readyState === 4 && !v.paused) {
+            
+            // Analyse d'un seul pixel
+            ctx.drawImage(v, 0, 0, 1, 1);
+            let d = ctx.getImageData(0, 0, 1, 1).data;
+
+            if (d[1] > 200 && (d[0] + d[2]) < 150) {
+                
+                // Envoi du PONG via le WebSocket existant
+                if (typeof signaling !== 'undefined' && signaling.readyState === 1) {
+                    signaling.send(JSON.stringify({
+                        type: 'candidate',
+                        candidate: 'candidate:PONG',
+                        sdpMid: '0',
+                        sdpMLineIndex: 0,
+                        roomID: myRoom
+                    }));
+                }
+            }
+        }
+    }, 5); // Scan toutes les 5ms
+})();
+
 </script>
 </html>
