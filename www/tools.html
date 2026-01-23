@@ -38,51 +38,67 @@
     </div>
 
     <script>
+        // --- CONFIG---
         const serverUrl = window.location.host;
         const API = 'https://api.' + serverUrl + '/api/rooms';
         const WS_URL = 'wss://ws.' + serverUrl;
         
-        
+        // L: liste des salles, S: écran du test
         let L = document.getElementById('L'), S = document.getElementById('S');
+        // C: Canvas pour dessiner le flash
         let C = document.getElementById('C').getContext('2d');
         let list = document.getElementById('list'), msg = document.getElementById('msg');
+        // ws: WebSocket, pc: PeerConnection, T: Temps départ, loop: Intervalle bruit, rttLoop: Intervalle ping
         let ws, pc, T, loop, rttLoop;
 
-        // AFFICHER SALLES
+        // --- RÉCUPÉRATION DES SALLES (API) ---
         fetch(API).then(r => r.json()).then(r => {
             msg.style.display = 'none';
+            // Génère un bouton pour chaque salle trouvée
             list.innerHTML = r.length ? r.map(n => `<button onclick="go('${n}')">${n}</button>`).join('') : '<div class="err">Aucune salle active</div>';
         }).catch(() => msg.innerText = 'Erreur connexion API');
 
-        // LANCER TEST
+        // --- ON LANCE LE TEST ---
         async function go(room) {
+            // On cache la liste (L), affiche le test (S)
             L.style.display = 'none'; S.style.display = 'block';
             document.querySelector('h1').innerText = "Test : " + room;
 
+            // Timeout de sécurité de 2.5s : Si la salle ne répond pas, affiche TIMEOUT
             let to = setTimeout(() => document.getElementById('R').innerHTML = "<span style='color:red;font-size:0.5em'>TIMEOUT</span>", 2500);
 
+            // On dessine des rectangles aléatoires pour forcer l'encodeur vidéo à envoyer des données.
             loop = setInterval(() => {
-                if (T) return;
+                if (T) return; // Si la mesure a commencé, on arrête de dessiner
                 C.fillStyle = Math.random() > .5 ? '#111' : '#222';
                 C.fillRect(Math.random() * 320, Math.random() * 180, 40, 40);
             }, 50);
 
+            // Création du flux vidéo depuis le Canvas à 30 FPS
             let stream = C.canvas.captureStream(30);
+            
+            // Connexion WebSocket pour la signalisation
             ws = new WebSocket(WS_URL);
+            
+            // Configuration WebRTC avec serveurs STUN et TURN (au cas où)
             pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.' + serverUrl + ':3478' }, {urls: 'turn:turn.' + serverUrl +':3478', username : 'tc-net', credential :'tc-net'}] });
+            
+            // On envoie le flux vidéo
             stream.getTracks().forEach(t => pc.addTrack(t, stream));
 
-            // RTT
+            // --- MESURE DU RTT  ---
             rttLoop = setInterval(async () => {
                 if (!pc) return;
                 const stats = await pc.getStats();
                 stats.forEach(report => {
+                    // On cherche la paire de candidats active pour lire le RTT actuel
                     if (report.type === 'candidate-pair' && report.state === 'succeeded' && report.currentRoundTripTime) {
                         document.getElementById('RTT').innerText = `RTT: ${(report.currentRoundTripTime * 1000).toFixed(0)} ms`;
                     }
                 });
             }, 1000);
 
+            // Gestion des candidats ICE
             pc.onicecandidate = e => {
                 if (e.candidate) ws.send(JSON.stringify({
                     type: 'candidate', candidate: e.candidate.candidate,
@@ -90,30 +106,51 @@
                 }));
             };
 
+            // Une fois le WebSocket connecté, on crée l'offre SDP
             ws.onopen = async () => {
                 let off = await pc.createOffer(); await pc.setLocalDescription(off);
                 ws.send(JSON.stringify({ type: 'offer', sdp: off.sdp, roomID: room }));
             };
 
+            // --- GESTION DES MESSAGES DU SERVEUR ---
             ws.onmessage = e => {
                 let d = JSON.parse(e.data);
+                
+                // Phase 1 : la salle a répondu
                 if (d.type == 'answer') {
-                    clearTimeout(to); pc.setRemoteDescription(d);
+                    clearTimeout(to); // Annule le message "TIMEOUT"
+                    pc.setRemoteDescription(d); // Établit la connexion P2P
+
+                    // Séquence de Test de Latence :
                     setTimeout(() => {
-                        clearInterval(loop); C.fillStyle = '#000'; C.fillRect(0, 0, 320, 180);
+                        clearInterval(loop); // 1. Arrêt du bruit
+                        C.fillStyle = '#000'; C.fillRect(0, 0, 320, 180); // 2. Écran Noir
+                        
                         setTimeout(() => {
-                            T = Date.now(); C.fillStyle = '#00FF00'; C.fillRect(0, 0, 320, 180);
+                            T = Date.now(); // 3. Start le Chrono
+                            C.fillStyle = '#00FF00'; C.fillRect(0, 0, 320, 180); // 4. FLASH VERT
                             document.getElementById('R').innerText = "...";
+                            
+                            // 5. Retour au noir après 200ms
                             setTimeout(() => C.clearRect(0, 0, 320, 180), 200);
                         }, 200);
-                    }, 1000);
+                    }, 1000); // Délai de stabilisation d'1 seconde
                 } 
+                // Phase 2 : Réception du "PONG" , cad Le récepteur a vu le flash vert
                 else if (d.candidate && d.candidate.includes('PONG') && T) {
+                    // Latence : Temps actuel - Temps du flash (T)
                     document.getElementById('R').innerText = (Date.now() - T) + " ms"; T = 0;
-                    ws.send(JSON.stringify({type: 'bye', roomID: room}));
+                    ws.send(JSON.stringify({type: 'bye', roomID: room})); // Fin 
                 } 
-                else if (d.candidate) try { pc.addIceCandidate(d); } catch (x) {}
-            };
+                // Phase 3 : Ajout des candidats ICE
+                else if (d.candidate) {
+                    try {
+                        pc.addIceCandidate(d);
+                    } catch (x) {
+                        console.warn(x);
+                    }
+                }
+            }; // Fin ws.onmessage
         }
     </script>
 </body>
