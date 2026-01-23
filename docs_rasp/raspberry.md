@@ -247,6 +247,24 @@ Les fichiers de configuration générés sont stockés dans :
 
 ---
 
+### 6.6 Automatisation de la connexion au démarrage (crucial)
+
+Afin de garantir un fonctionnement totalement autonome de l’appareil (sans clavier ni intervention humaine), il est indispensable de s’assurer que la connexion **Eduroam s’active automatiquement dès l’allumage** du Raspberry Pi.
+
+Par défaut, certains profils NetworkManager peuvent être restreints à un utilisateur spécifique ou nécessiter une session interactive. La configuration suivante permet de lever ces restrictions.
+
+Exécuter la commande suivante :
+
+```bash
+sudo nmcli connection modify "eduroam (from geteduroam)" connection.permissions "" connection.autoconnect yes
+```
+
+Cette commande permet de :
+- supprimer toute restriction d’utilisateur (`connection.permissions`),
+- autoriser la connexion automatique au démarrage du système (`autoconnect`).
+
+---
+
 
 ## 7. Installation de l’environnement graphique minimal
 
