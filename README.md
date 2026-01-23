@@ -8,6 +8,9 @@ Screen streaming using WebRTC and Eduroam
 ├── docker-compose.yml      # Infrastructure deployment instructions
 ├── docs_rasp               # Docs related to building a Pi Image that fits our needs
 │   └── raspberry.md        # Manual image building
+├── rasp                    # Pi Image autobuilder 
+│   ├── cloud-init          # Config file for the Pi
+│   └── flash.sh            # Flashing tool
 ├── README.md               # This file
 ├── www                     # html pages                    
 │   ├── index.html          # Sending page

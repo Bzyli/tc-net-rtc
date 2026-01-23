@@ -40,4 +40,7 @@ echo "Coping image done"
 mkdir -p mnt
 mount ${DEVICE}1  mnt
 cp ./cloud-init mnt/user-data
+
+
+umount $DEVICE*
 exit 0
