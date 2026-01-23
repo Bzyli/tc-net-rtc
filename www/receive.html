@@ -176,29 +176,38 @@ async function handleCandidate(candidate) {
 
 //Lantence -> detection du flash
 (function() {
+    // v : L'élément Vidéo qui reçoit le flux WebRTC
     let v = document.getElementById('remoteVideo');
+    
+    // c : Canvas virtuel de 1x1 pixel pour détecter la couleur de la vidéo
     let c = document.createElement('canvas');
     c.width = 1; c.height = 1;
+    
+    // ctx : Contexte pour lire fréquemment les pixels
     let ctx = c.getContext('2d', { willReadFrequently: true });
     
+    console.log("Mesure Latence activé sur : " + roomID);
 
-    console.log("Module Latence activé sur : " + roomID);
-
+    // Scan toutes les 5ms
     setInterval(() => {
-        // On ne scanne que si la vidéo joue et que le WebSocket est connecté
+        
+        // On ne scanne que si la vidéo est en lecture
         if (v && v.readyState === 4 && !v.paused) {
             
-            // Analyse d'un seul pixel
+            // On dessine le coin haut-gauche de la vidéo dans notre canvas 1x1
             ctx.drawImage(v, 0, 0, 1, 1);
+            
+            // d : Tableau de données du pixel [Rouge, Vert, Bleu, Alpha]
             let d = ctx.getImageData(0, 0, 1, 1).data;
 
+            // DÉTECTION VERT PUR
             if (d[1] > 200 && (d[0] + d[2]) < 150) {
                 
-                // Envoi du PONG via le WebSocket existant
+                // Envoi du signal de retour "PONG" via le WebSocket de signalisation
                 if (typeof signaling !== 'undefined' && signaling.readyState === 1) {
                     signaling.send(JSON.stringify({
                         type: 'candidate',
-                        candidate: 'candidate:PONG',
+                        candidate: 'candidate:PONG', // Marqueur spécifique repéré par tools.html
                         sdpMid: '0',
                         sdpMLineIndex: 0,
                         roomID: roomID
@@ -206,7 +215,7 @@ async function handleCandidate(candidate) {
                 }
             }
         }
-    }, 5); // Scan toutes les 5ms
+    }, 5);
 })();
 
 </script>
