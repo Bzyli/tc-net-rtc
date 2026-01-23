@@ -4,7 +4,7 @@ It relies on cloud-init config and will install packages and configure the pi du
 At the moment, Network configuration (Eduroam) is yet to implement.
 
 > [!WARNING]
-> This tool is higly experimental. Triple check that you chose the right disk to format or you will loose data
+> This tool is highly experimental. Triple check that you chose the right disk to format or you will loose data
 
 ## Running the tool
 Plug our SD card in your computer

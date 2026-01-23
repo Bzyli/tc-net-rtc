@@ -6,6 +6,14 @@ Screen streaming using WebRTC and Eduroam
 ├── Caddyfile               # Config file for the HTTPS server
 ├── coturn.conf             # Config file for the STUN/TURN server
 ├── docker-compose.yml      # Infrastructure deployment instructions
+├── documentation           # Documentation about this project architecture and technology
+│   ├── 1 - SIR - Etat de l'art (version finale).pdf
+│   ├── 2 - SIR - Solution retenue.pdf
+│   ├── 3 - SIR -WebRTC.pdf
+│   ├── 4 - SIR - Rapport Eduroam WebRTC.pdf
+│   ├── 5 - SIR - Vecteurs d'attaque.pdf
+│   ├── 6 - SIR - Codec.pdf
+│   └── 7 - SIR - Alternatives au Raspberry Pi 4.pdf
 ├── docs_rasp               # Docs related to building a Pi Image that fits our needs
 │   └── raspberry.md        # Manual image building
 ├── rasp                    # Pi Image autobuilder 
@@ -24,6 +32,11 @@ Screen streaming using WebRTC and Eduroam
 ```
 
 ## Project architecture
+For this project, you need a Raspberry Pi:
+Follow the instructions in `docs_rasp` to set it up.
+> [!NOTE]
+> Alternatively, you can try to use the auto-config tool in `rasp` but it's highly experimental
+
 The project server has 3 main parts :
 - webserver : Caddy
 - backend : tc-net-backend (node)
